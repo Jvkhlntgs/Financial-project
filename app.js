@@ -23,6 +23,7 @@ var uiController = (function () {
 
 //Sanhuutei ajillah module....................................................................
 var financeController = (function () {
+  //private datas
   var Income = function (id, description, value) {
     this.id = id;
     this.description = description;
@@ -34,7 +35,7 @@ var financeController = (function () {
     this.description = description;
     this.value = value;
   };
-
+  // Private datas
   var data = {
     allItems: {
       inc: [],
@@ -45,14 +46,35 @@ var financeController = (function () {
       exp: 0,
     },
   };
+  return {
+    addItem: function (type, desc, val) {
+      var item, id;
+
+      if (data.item[type].length === 0) id = 1;
+      else {
+        id = data.allItems[type][data.allItems[type].length - 1].id + 1;
+      }
+      if (type === "inc") {
+        item = new Income(id, desc, val);
+      } else {
+        item = new Expense(id, desc, val);
+      }
+
+      data.allItems[type].push(item);
+    },
+    seeData: function () {
+      return data;
+    },
+  };
 })();
 
 //Holbogch module...............................................................
 var appController = (function (uiController, financeController) {
   var controlItem = function () {
     // 1. Oruulah ogogdoliig delgetsees olj avna.
-    console.log(uiController.getInput());
+    var input = uiController.getInput();
     // 2. Olj avsan ogogdluudee sanhuu controld damjuulj tendee hadgalna.
+    financeController.addItem(input.type, input.desc, input.val);
     // 3. Olj avsan ogogdluudiig web deer tohiroh hesguuded gargana.
     // 4. Tosoviig tootsoolon bodno.
     // 5. Etssiin uldegdel tootsoog bodoj delgetsend gargana.
@@ -74,7 +96,6 @@ var appController = (function (uiController, financeController) {
 
   return {
     init: function () {
-      console.log("Start");
       setupEventListeners();
     },
   };
