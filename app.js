@@ -18,6 +18,26 @@ var uiController = (function () {
     getDomStrings: function () {
       return DOMstrings;
     },
+    addListItem: function (item, type) {
+      //Orlogo zarlaga element aguulsan html beltgene
+      var html, list;
+      if (type === "inc") {
+        list = ".income__list";
+        html =
+          '<div class="item clearfix" id="income-%id%"><div class="item__description">%des%</div><div class="right clearfix"><div class="item__value">%value%</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
+      } else {
+        list = ".expenses__list";
+        html =
+          '<div class="item clearfix" id="expense-%id%"><div class="item__description">%des%</div><div class="right clearfix"><div class="item__value">%value%</div><div class="item__percentage">21%</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
+      }
+
+      //Ter html dotor orlogo zarlaga utguudig replace ashiglan oorchilon
+      html = html.replace("%id%", item.id);
+      html = html.replace("%des%", item.description);
+      html = html.replace("%value%", item.value);
+      //Beltgesen html ee DOM ruu hiij ogno
+      document.querySelector(list).insertAdjacentHTML("beforeend", html);
+    },
   };
 })();
 
@@ -47,20 +67,21 @@ var financeController = (function () {
     },
   };
   return {
-    addItem: function (type, desc, val) {
+    addItem: function (type, description, value) {
       var item, id;
 
-      if (data.item[type].length === 0) id = 1;
+      if (data.allItems[type].length === 0) id = 1;
       else {
         id = data.allItems[type][data.allItems[type].length - 1].id + 1;
       }
       if (type === "inc") {
-        item = new Income(id, desc, val);
+        item = new Income(id, description, value);
       } else {
-        item = new Expense(id, desc, val);
+        item = new Expense(id, description, value);
       }
 
       data.allItems[type].push(item);
+      return item;
     },
     seeData: function () {
       return data;
@@ -74,8 +95,13 @@ var appController = (function (uiController, financeController) {
     // 1. Oruulah ogogdoliig delgetsees olj avna.
     var input = uiController.getInput();
     // 2. Olj avsan ogogdluudee sanhuu controld damjuulj tendee hadgalna.
-    financeController.addItem(input.type, input.desc, input.val);
+    var item = financeController.addItem(
+      input.type,
+      input.description,
+      input.value
+    );
     // 3. Olj avsan ogogdluudiig web deer tohiroh hesguuded gargana.
+    uiController.addListItem(item, input.type);
     // 4. Tosoviig tootsoolon bodno.
     // 5. Etssiin uldegdel tootsoog bodoj delgetsend gargana.
   };
