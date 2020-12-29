@@ -67,7 +67,7 @@ var uiController = (function () {
     displayDate: function () {
       var today = new Date();
       document.querySelector(DOMstrings.dateLabel).textContent =
-        today.getFullYear() + " оны " + today.getMonth();
+        today.getFullYear() + " оны ";
     },
 
     getInput: function () {
