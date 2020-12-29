@@ -41,9 +41,9 @@ var uiController = (function () {
       z = z.substr(1, z.length - 1);
     }
     if (type === "inc") {
-      z = "+ " + z;
+      z = "+" + z;
     } else {
-      z = "- " + z;
+      z = "-" + z;
     }
     return z;
   };
@@ -113,13 +113,13 @@ var uiController = (function () {
         type = "exp";
       }
       document.querySelector(DOMstrings.tusuvLabel).textContent =
-        "Үлдэгдэл: " + formatNum(tusuv.tusuv + "₮", type);
+        "Үлдэгдэл: " + formatNum(tusuv.tusuv, type);
       document.querySelector(DOMstrings.incomeLabel).textContent = formatNum(
-        tusuv.totalInc + "₮",
+        tusuv.totalInc,
         "inc"
       );
       document.querySelector(DOMstrings.expenseLabel).textContent = formatNum(
-        tusuv.totalExp + "₮",
+        tusuv.totalExp,
         "exp"
       );
       if (tusuv.huvi !== 0) {
