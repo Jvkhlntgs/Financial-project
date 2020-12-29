@@ -5,6 +5,8 @@ var uiController = (function () {
     inputDesc: ".add__description",
     inputValue: ".add__value",
     addBtn: ".add__btn",
+    incomeList: ".income__list",
+    expenseList: ".expenses__list",
   };
 
   return {
@@ -12,21 +14,41 @@ var uiController = (function () {
       return {
         type: document.querySelector(DOMstrings.inputType).value,
         description: document.querySelector(DOMstrings.inputDesc).value,
-        value: document.querySelector(DOMstrings.inputValue).value,
+        value: parseInt(document.querySelector(DOMstrings.inputValue).value),
       };
     },
     getDomStrings: function () {
       return DOMstrings;
     },
+
+    clearFields: function () {
+      var fields = document.querySelectorAll(
+        DOMstrings.inputDesc + " ," + DOMstrings.inputValue
+      );
+
+      //Convert list to Array
+      var fieldsArr = Array.prototype.slice.call(fields);
+
+      fieldsArr.forEach(function (el, index, array) {
+        el.value = "";
+      });
+
+      fieldsArr[0].focus();
+
+      // for (var i = 0; i < fieldsArr.length; i++) {
+      //   fieldsArr[i].value = " ";
+      // }
+    },
+
     addListItem: function (item, type) {
       //Orlogo zarlaga element aguulsan html beltgene
       var html, list;
       if (type === "inc") {
-        list = ".income__list";
+        list = DOMstrings.incomeList;
         html =
           '<div class="item clearfix" id="income-%id%"><div class="item__description">%des%</div><div class="right clearfix"><div class="item__value">%value%</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
       } else {
-        list = ".expenses__list";
+        list = DOMstrings.expenseList;
         html =
           '<div class="item clearfix" id="expense-%id%"><div class="item__description">%des%</div><div class="right clearfix"><div class="item__value">%value%</div><div class="item__percentage">21%</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>';
       }
@@ -55,6 +77,15 @@ var financeController = (function () {
     this.description = description;
     this.value = value;
   };
+
+  var calculateTotal = function (type) {
+    var sum = 0;
+    data.allItems[type].forEach(function (el) {
+      sum = sum + el.value;
+    });
+    data.totals[type] = sum;
+  };
+
   // Private datas
   var data = {
     allItems: {
@@ -65,8 +96,32 @@ var financeController = (function () {
       inc: 0,
       exp: 0,
     },
+
+    tusuv: 0,
+
+    huvi: 0,
   };
   return {
+    TusuvTootsooloh: function () {
+      // niit orlogo niilber
+      calculateTotal("inc");
+      //niit zarlaga niilber
+      calculateTotal("exp");
+      //tusuviig shineer tootsooloh
+      data.tusuv = data.totals.inc - data.totals.exp;
+      // orlogo zarlagiin huvichlal
+      data.huvi = Math.round((data.totals.exp / data.totals.inc) * 100);
+    },
+
+    TusuvAvah: function () {
+      return {
+        tusuv: data.tusuv,
+        huvi: data.huvi,
+        totalInc: data.totals.inc,
+        totalExp: data.totals.exp,
+      };
+    },
+
     addItem: function (type, description, value) {
       var item, id;
 
@@ -94,16 +149,24 @@ var appController = (function (uiController, financeController) {
   var controlItem = function () {
     // 1. Oruulah ogogdoliig delgetsees olj avna.
     var input = uiController.getInput();
-    // 2. Olj avsan ogogdluudee sanhuu controld damjuulj tendee hadgalna.
-    var item = financeController.addItem(
-      input.type,
-      input.description,
-      input.value
-    );
-    // 3. Olj avsan ogogdluudiig web deer tohiroh hesguuded gargana.
-    uiController.addListItem(item, input.type);
-    // 4. Tosoviig tootsoolon bodno.
-    // 5. Etssiin uldegdel tootsoog bodoj delgetsend gargana.
+
+    if (input.description !== "" && input.value !== "") {
+      // 2. Olj avsan ogogdluudee sanhuu controld damjuulj tendee hadgalna.
+      var item = financeController.addItem(
+        input.type,
+        input.description,
+        input.value
+      );
+      // 3. Olj avsan ogogdluudiig web deer tohiroh hesguuded gargana.
+      uiController.addListItem(item, input.type);
+      uiController.clearFields();
+      // 4. Tosoviig tootsoolon bodno.
+      financeController.TusuvTootsooloh();
+      // 5. Etssiin uldegdel tootsoog bodoj delgetsend gargana.
+      var tusuv = financeController.TusuvAvah();
+      // 6. Delgetsend gargah
+      console.log(tusuv);
+    }
   };
 
   var setupEventListeners = function () {
