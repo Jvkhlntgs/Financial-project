@@ -12,9 +12,49 @@ var uiController = (function () {
     expenseLabel: ".budget__expenses--value",
     percentageLabel: ".budget__expenses--percentage",
     containerDiv: ".container",
+    expensePerLabel: ".item__percentage",
+    dateLabel: ".budget__title--month",
+  };
+
+  //Minii uuriin nodeList deer davtalt hiih function
+  var nodeListForEach = function (list, callback) {
+    for (var i = 0; i < list.length; i++) {
+      callback(list[i], i);
+    }
+  };
+
+  var formatNum = function (too, type) {
+    too = "" + too;
+
+    var x = too.split("").reverse().join("");
+    var y = "";
+    var count = 1;
+    for (var i = 0; i < x.length; i++) {
+      y = y + x[i];
+      if (count % 3 === 0) {
+        y = y + ",";
+      }
+      count++;
+    }
+    var z = y.split("").reverse().join("");
+    if (z[0] === ",") {
+      z = z.substr(1, z.length - 1);
+    }
+    if (type === "inc") {
+      z = "+ " + z;
+    } else {
+      z = "- " + z;
+    }
+    return z;
   };
 
   return {
+    displayDate: function () {
+      var today = new Date();
+      document.querySelector(DOMstrings.dateLabel).textContent =
+        today.getFullYear() + " оны " + today.getMonth();
+    },
+
     getInput: function () {
       return {
         type: document.querySelector(DOMstrings.inputType).value,
@@ -24,6 +64,15 @@ var uiController = (function () {
     },
     getDomStrings: function () {
       return DOMstrings;
+    },
+
+    displayPersentages: function (allPersentages) {
+      // Zarlagiin nodelist oloh.
+      var elements = document.querySelectorAll(DOMstrings.expensePerLabel);
+      // elementuudin huvid zarlagiin huviig massivaas avj shivne
+      nodeListForEach(elements, function (el, index) {
+        el.textContent = allPersentages[index] + "%";
+      });
     },
 
     clearFields: function () {
@@ -42,12 +91,22 @@ var uiController = (function () {
     },
 
     tusuvUzuuleh: function (tusuv) {
+      var type;
+      if (tusuv.tusuv > 0) {
+        type = "inc";
+      } else {
+        type = "exp";
+      }
       document.querySelector(DOMstrings.tusuvLabel).textContent =
-        tusuv.tusuv + "₮";
-      document.querySelector(DOMstrings.incomeLabel).textContent =
-        tusuv.totalInc + "₮";
-      document.querySelector(DOMstrings.expenseLabel).textContent =
-        tusuv.totalExp + "₮";
+        "Үлдэгдэл: " + formatNum(tusuv.tusuv + "₮", type);
+      document.querySelector(DOMstrings.incomeLabel).textContent = formatNum(
+        tusuv.totalInc + "₮",
+        "inc"
+      );
+      document.querySelector(DOMstrings.expenseLabel).textContent = formatNum(
+        tusuv.totalExp + "₮",
+        "exp"
+      );
       if (tusuv.huvi !== 0) {
         document.querySelector(DOMstrings.percentageLabel).textContent =
           tusuv.huvi + "%";
@@ -79,7 +138,7 @@ var uiController = (function () {
       //Ter html dotor orlogo zarlaga utguudig replace ashiglan oorchilon
       html = html.replace("%id%", item.id);
       html = html.replace("%des%", item.description);
-      html = html.replace("%value%", item.value);
+      html = html.replace("%value%", formatNum(item.value, type) + "₮");
       //Beltgesen html ee DOM ruu hiij ogno
       document.querySelector(list).insertAdjacentHTML("beforeend", html);
     },
@@ -99,6 +158,17 @@ var financeController = (function () {
     this.id = id;
     this.description = description;
     this.value = value;
+    this.persentage = -1;
+  };
+
+  Expense.prototype.calcPersentage = function (totalInc) {
+    if (totalInc > 0) {
+      this.persentage = Math.round((this.value / totalInc) * 100);
+    } else this.persentage = 0;
+  };
+
+  Expense.prototype.getPersentage = function () {
+    return this.persentage;
   };
 
   var calculateTotal = function (type) {
@@ -133,7 +203,11 @@ var financeController = (function () {
       //tusuviig shineer tootsooloh
       data.tusuv = data.totals.inc - data.totals.exp;
       // orlogo zarlagiin huvichlal
-      data.huvi = Math.round((data.totals.exp / data.totals.inc) * 100);
+      if (data.totals.inc > 0) {
+        data.huvi = Math.round((data.totals.exp / data.totals.inc) * 100);
+      } else {
+        data.huvi = 0;
+      }
     },
 
     TusuvAvah: function () {
@@ -171,8 +245,21 @@ var financeController = (function () {
       data.allItems[type].push(item);
       return item;
     },
+
     seeData: function () {
       return data;
+    },
+
+    calculatePersentages: function () {
+      data.allItems.exp.forEach(function (el) {
+        el.calcPersentage(data.totals.inc);
+      });
+    },
+    getPersentages: function () {
+      var allPersentages = data.allItems.exp.map(function (el) {
+        return el.getPersentage();
+      });
+      return allPersentages;
     },
   };
 })();
@@ -193,13 +280,24 @@ var appController = (function (uiController, financeController) {
       // 3. Olj avsan ogogdluudiig web deer tohiroh hesguuded gargana.
       uiController.addListItem(item, input.type);
       uiController.clearFields();
-      // 4. Tosoviig tootsoolon bodno.
-      financeController.TusuvTootsooloh();
-      // 5. Etssiin uldegdel tootsoog bodoj delgetsend gargana.
-      var tusuv = financeController.TusuvAvah();
-      // 6. Delgetsend gargah
-      uiController.tusuvUzuuleh(tusuv);
+      //Tusviig shineer tootsolon delgetsend gargah
+      updateTusuv();
     }
+  };
+
+  var updateTusuv = function () {
+    // 4. Tosoviig tootsoolon bodno.
+    financeController.TusuvTootsooloh();
+    // 5. Etssiin uldegdel tootsoog bodoj delgetsend gargana.
+    var tusuv = financeController.TusuvAvah();
+    // 6. Delgetsend gargah
+    uiController.tusuvUzuuleh(tusuv);
+    // 7. Huviig delgetsend updateleh
+    financeController.calculatePersentages();
+    // 8. Elementuudiin huviig huleej avna
+    var allPersentages = financeController.getPersentages();
+    // 9. Edgeer huviudiig delgetsend gargah
+    uiController.displayPersentages(allPersentages);
   };
 
   var setupEventListeners = function () {
@@ -231,12 +329,14 @@ var appController = (function (uiController, financeController) {
           //delgets deerees element ustgana
           uiController.deleteListItem(id);
           //uldegdel tootsoog shinchleh
+          updateTusuv();
         }
       });
   };
 
   return {
     init: function () {
+      uiController.displayDate();
       uiController.tusuvUzuuleh({
         tusuv: 0,
         huvi: 0,
